@@ -210,8 +210,7 @@ const APP_FINDER_TEMPLATE = 'external-asset-chooser';
 type Settings = {
     container: HTMLElement;
     multiSelect?: boolean;
-    filters?: FilterSettings[],
-    popup?: PopupConfiguration
+    filters?: FilterSettings[]
 };
 
 type FilterSettings = {
@@ -252,6 +251,12 @@ type TokenConfiguration = {
     scopes: string[];
 };
 
+const DEFAULT_SETTINGS: {
+    multiSelect: boolean;
+} = {
+    multiSelect: true
+};
+
 const ELEMENT: {
     event: boolean;
     container: HTMLElement|null;
@@ -269,7 +274,22 @@ let finderToken: TokenConfiguration;
 let finderSettings: Settings|null= null;
 let isOpen: boolean = false;
 
-export async function open(token: TokenConfiguration, settings: Settings): Promise<Event>{
+export async function open(token: TokenConfiguration, settings: Settings): Promise<Event|void>{
+
+    if (isOpen) {
+        logMessage('warning', {
+            code: 'WARN_FINDER_OPEN',
+            message: "Finder window is already open!",
+        });
+        return;
+    }
+
+    isOpen = true;
+
+    if (settings.multiSelect === undefined) {
+        settings.multiSelect = DEFAULT_SETTINGS.multiSelect;
+    }
+
     finderToken = token;
     finderSettings = settings;
 
@@ -301,8 +321,15 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
     });
 }
 
-function assetSelectionListener(success = (event: Event) => {}, cancel = () => {}) {
-    ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: Event) => success(event));
+function assetSelectionListener(success = (event: CustomEvent) => {}, cancel = () => {}) {
+    ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: CustomEventInit) => {
+        const assetIds: number[] = [];
+        event.detail.assetSelection.forEach((element: {id: number}) => {
+            assetIds.push(element.id);
+        });
+        // perform graphql assets query
+        success(event.detail.assetSelection)
+    });
     ELEMENT.iframe?.addEventListener('assetCancelEvent', () => cancel());
 }
 
@@ -347,7 +374,7 @@ function messageHandler(e: FinderEvent) {
   }
 
 function handleAssetSelection(assetSelection: Assets) {
-    ELEMENT.iframe?.dispatchEvent(new CustomEvent('assetSelectionEvent', { detail: { assetSelection } }));
+    ELEMENT.iframe?.dispatchEvent(new CustomEvent<{ assetSelection: Assets }>('assetSelectionEvent', { detail: { assetSelection } }));
 }
 
 function handleAssetCancel() {
