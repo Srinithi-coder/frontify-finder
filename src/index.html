@@ -91,6 +91,7 @@
             authorize(AUTHORIZATION_CONFIG, POPUP_CONFIG).then(res => {
                 if (res) {
                     domain = res.domain;
+                    localStorage.setItem('FrontifyFinderToken', JSON.stringify(res));
                     token = res;
                 }
             }).catch((err) => {
@@ -123,11 +124,12 @@
     }
 
     function openFinderAction() {
-        if (token) {
-            open(token, {
+        let storedToken = localStorage.getItem('FrontifyFinderToken');
+        if (storedToken) {
+            open(JSON.parse(storedToken), {
                 container: document.getElementById('FinderFrame')
-            }).then((event) => {
-                console.log(event);
+            }).then((assets) => {
+                console.log(assets);
             }).catch(() => {
                 console.log('error');
             });
