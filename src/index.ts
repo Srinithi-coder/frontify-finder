@@ -274,7 +274,7 @@ let finderToken: TokenConfiguration;
 let finderSettings: Settings|null= null;
 let isOpen: boolean = false;
 
-export async function open(token: TokenConfiguration, settings: Settings): Promise<Event|void>{
+export async function open(token: TokenConfiguration, settings: Settings): Promise<Assets|void>{
 
     if (isOpen) {
         logMessage('warning', {
@@ -313,20 +313,21 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
     }
 
     return new Promise((resolve, reject) => {
-        assetSelectionListener((e: Event) => {
-            resolve(e);
+        assetSelectionListener((assets: Assets) => {
+            resolve(assets);
         }, () => {
             reject();
         });
     });
 }
 
-function assetSelectionListener(success = (event: CustomEvent) => {}, cancel = () => {}) {
+function assetSelectionListener(success = (assets: Assets) => {}, cancel = () => {}) {
     ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: CustomEventInit) => {
         const assetIds: number[] = [];
         event.detail.assetSelection.forEach((element: {id: number}) => {
             assetIds.push(element.id);
         });
+        console.log(assetIds);
         // perform graphql assets query
         success(event.detail.assetSelection)
     });
