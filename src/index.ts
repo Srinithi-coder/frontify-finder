@@ -204,6 +204,8 @@ function createPopUp(configuration: PopupConfiguration): Popup {
 
 ///////////////////// FRONTIFY FINDER /////////////////////
 
+import { httpCall } from './Utils';
+
 const APP_NAME = 'FrontifyFinder';
 const APP_FINDER_TEMPLATE = 'external-asset-chooser';
 
@@ -228,16 +230,14 @@ type FinderEvent = {
     };
 };
 
+type FrontifyAssets = {
+    id: string;
+}[];
+
 type Assets = Asset[];
 type Asset = {
     id?: number;
 };
-
-type FinderCustomEvent = {
-    detail: {
-        assetsSelection: Assets;
-    }
-}
 
 type TokenConfiguration = {
     bearerToken: {
@@ -274,7 +274,7 @@ let finderToken: TokenConfiguration;
 let finderSettings: Settings|null= null;
 let isOpen: boolean = false;
 
-export async function open(token: TokenConfiguration, settings: Settings): Promise<Assets|void>{
+export async function open(token: TokenConfiguration, settings: Settings): Promise<FrontifyAssets|void>{
 
     if (isOpen) {
         logMessage('warning', {
@@ -313,7 +313,7 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
     }
 
     return new Promise((resolve, reject) => {
-        assetSelectionListener((assets: Assets) => {
+        assetSelectionListener((assets: FrontifyAssets) => {
             resolve(assets);
         }, () => {
             reject();
@@ -321,15 +321,35 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
     });
 }
 
-function assetSelectionListener(success = (assets: Assets) => {}, cancel = () => {}) {
+function assetSelectionListener(success = (assets: FrontifyAssets) => {}, cancel = () => {}) {
     ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: CustomEventInit) => {
         const assetIds: number[] = [];
+        const assets: FrontifyAssets = [];
         event.detail.assetSelection.forEach((element: {id: number}) => {
             assetIds.push(element.id);
         });
-        console.log(assetIds);
-        // perform graphql assets query
-        success(event.detail.assetSelection)
+
+        httpCall('https://' + finderToken.bearerToken.domain + '/graphql', {
+            method: 'POST',
+            headers: {
+                authorization: `${finderToken.bearerToken.tokenType} ${finderToken.bearerToken.accessToken}`,
+                'content-type': 'application/json',
+                'x-frontify-beta': 'enabled'
+            },
+            body: JSON.stringify(`{
+                assets(ids: ${assetIds}) {
+                    ... on Image {
+                        id
+                    }
+                }
+            }`)
+        }).then((response: any) => {
+            assets.push(response.data.asset);
+        }).catch(() => {
+            throw new Error("Failed fetching assets data");
+        });
+
+        success(assets);
     });
     ELEMENT.iframe?.addEventListener('assetCancelEvent', () => cancel());
 }
