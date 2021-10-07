@@ -69,7 +69,6 @@ const ELEMENT: {
     window: window,
 };
 
-let assetsSelection: Assets|null = null;
 let finderToken: TokenConfiguration;
 let finderSettings: Settings|null= null;
 let isOpen: boolean = false;
@@ -299,6 +298,5 @@ function close() {
     if (ELEMENT.container && ELEMENT.container.style.display !== 'none') {
         ELEMENT.container.style.display = 'none';
         ELEMENT.iframe?.parentNode?.removeChild(ELEMENT.iframe);
-        assetsSelection = [{}];
     }
 }
