@@ -25,6 +25,11 @@ type FinderEvent = {
     };
 };
 
+type GraphQlAssetsResponse = {
+    data: FrontifyAssets|null;
+}[];
+
+
 type FrontifyAssets = {
     id: string;
 }[];
@@ -136,7 +141,97 @@ function assetSelectionListener(success = (assets: FrontifyAssets) => {}, cancel
                 query AssetByIds($ids: [ID!]!) {
                     assets(ids: $ids) {
                         id
+                        title
+                        description
+                        creator {
+                            name
+                        }
+                        createdAt
+                        type: __typename
+                        ...withTags
+                        ...withCopyright
+                        ...withLicenses
+                        ...withMetadata
+                        ...onImage
+                        ...onDocument
+                        ...onFile
+                        ...onAudio
+                        ...onVideo
                     }
+                }
+
+                fragment withLicenses on Asset {
+                    licenses {
+                        title
+                        text: license
+                    }
+                }
+
+                fragment withCopyright on Asset {
+                    copyright {
+                        status
+                        notice
+                    }
+                }
+
+                fragment withTags on Asset {
+                    tags {
+                        value
+                        source
+                    }
+                }
+
+                fragment withMetadata on Asset {
+                    metadataValues {
+                        value
+                        metadataField {
+                            id
+                            label
+                        }
+                    }
+                }
+
+                fragment onImage on Image {
+                    filename
+                    size
+                    downloadUrl(validityInDays: 1)
+                    previewUrl
+                    width
+                    height
+                    focalPoint
+                }
+
+                fragment onFile on File {
+                    filename
+                    size
+                    downloadUrl(validityInDays: 1)
+                    icon: previewUrl
+                }
+
+                fragment onDocument on Document {
+                    filename
+                    size
+                    downloadUrl(validityInDays: 1)
+                    previewUrl
+                    focalPoint
+                }
+
+                fragment onAudio on Audio {
+                    filename
+                    size
+                    downloadUrl(validityInDays: 1)
+                    previewUrl
+                }
+
+                fragment onVideo on Video {
+                    filename
+                    size
+                    downloadUrl(validityInDays: 1)
+                    previewUrl
+                    width
+                    height
+                    duration
+                    bitrate
                 }`,
                 variables: { ids: assetIds }})
         }).then((response: any) => {
