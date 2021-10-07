@@ -2,13 +2,14 @@
     "compilerOptions": {
         "target": "esnext",
         "module": "commonjs",
+        "noEmit": true,
         "declaration": true,
         "outDir": "./dist",
         "strict": true,
         "moduleResolution": "node",
         "esModuleInterop": true,
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
-        "types": ["jest", "node"]
+        "types": ["node"]
     },
     "include": ["src"],
     "exclude": ["node_modules", "**/tests/*"]
