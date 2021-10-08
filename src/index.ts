@@ -7,7 +7,7 @@ const APP_FINDER_TEMPLATE = 'external-asset-chooser';
 type Settings = {
     container: HTMLElement;
     multiSelect?: boolean;
-    filters?: FilterSettings[]
+    filters?: FilterSettings[];
 };
 
 type FilterSettings = {
@@ -24,11 +24,6 @@ type FinderEvent = {
         error: string;
     };
 };
-
-type GraphQlAssetsResponse = {
-    data: FrontifyAssets|null;
-}[];
-
 
 type FrontifyAssets = {
     id: string;
@@ -54,13 +49,13 @@ type TokenConfiguration = {
 const DEFAULT_SETTINGS: {
     multiSelect: boolean;
 } = {
-    multiSelect: true
+    multiSelect: true,
 };
 
 const ELEMENT: {
     event: boolean;
-    container: HTMLElement|null;
-    iframe: HTMLIFrameElement|null;
+    container: HTMLElement | null;
+    iframe: HTMLIFrameElement | null;
     window: Window;
 } = {
     event: false,
@@ -70,15 +65,14 @@ const ELEMENT: {
 };
 
 let finderToken: TokenConfiguration;
-let finderSettings: Settings|null= null;
-let isOpen: boolean = false;
+let finderSettings: Settings | null = null;
+let isOpen = false;
 
-export async function open(token: TokenConfiguration, settings: Settings): Promise<FrontifyAssets|void>{
-
+export async function open(token: TokenConfiguration, settings: Settings): Promise<FrontifyAssets | void> {
     if (isOpen) {
         logMessage('warning', {
             code: 'WARN_FINDER_OPEN',
-            message: "Finder window is already open!",
+            message: 'Finder window is already open!',
         });
         return;
     }
@@ -112,28 +106,31 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
     }
 
     return new Promise((resolve, reject) => {
-        assetSelectionListener((assets: FrontifyAssets) => {
-            resolve(assets);
-        }, () => {
-            reject();
-        });
+        assetSelectionListener(
+            (assets: FrontifyAssets) => {
+                resolve(assets);
+            },
+            () => {
+                reject();
+            },
+        );
     });
 }
 
-function assetSelectionListener(success = (assets: FrontifyAssets) => {}, cancel = () => {}) {
+function assetSelectionListener(success: (assets: FrontifyAssets) => void, cancel: () => void) {
     ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: CustomEventInit) => {
         const assetIds: number[] = [];
         const assets: FrontifyAssets = [];
-        event.detail.assetSelection.forEach((element: {id: number}) => {
+        event.detail.assetSelection.forEach((element: { id: number }) => {
             assetIds.push(element.id);
         });
 
-        httpCall('https://' + finderToken.bearerToken.domain + '/graphql', {
+        httpCall(`https://${finderToken.bearerToken.domain}/graphql`, {
             method: 'POST',
             headers: {
                 authorization: `${finderToken.bearerToken.tokenType} ${finderToken.bearerToken.accessToken}`,
                 'content-type': 'application/json',
-                'X-Frontify-Beta': 'enabled'
+                'X-Frontify-Beta': 'enabled',
             },
             body: JSON.stringify({
                 query: `
@@ -232,12 +229,15 @@ function assetSelectionListener(success = (assets: FrontifyAssets) => {}, cancel
                     duration
                     bitrate
                 }`,
-                variables: { ids: assetIds }})
-        }).then((response: any) => {
-            assets.push(response.data.assets);
-        }).catch((error) => {
-            throw new Error("Failed fetching assets data");
-        });
+                variables: { ids: assetIds },
+            }),
+        })
+            .then((response: any) => {
+                assets.push(response.data.assets);
+            })
+            .catch((error) => {
+                throw new Error(error);
+            });
 
         success(assets);
     });
@@ -269,23 +269,25 @@ function messageHandler(e: FinderEvent) {
                 multiSelectionAllowed: finderSettings?.multiSelect,
                 filters: finderSettings?.filters,
             },
-            'https://' + finderToken?.bearerToken.domain
+            `https://${finderToken?.bearerToken.domain}`,
         );
     }
 
     if (e.data.assetsChosen) {
-      handleAssetSelection(e.data.assetsChosen);
-      close();
+        handleAssetSelection(e.data.assetsChosen);
+        close();
     }
 
     if (e.data.aborted) {
-      handleAssetCancel();
-      close();
+        handleAssetCancel();
+        close();
     }
-  }
+}
 
 function handleAssetSelection(assetSelection: Assets) {
-    ELEMENT.iframe?.dispatchEvent(new CustomEvent<{ assetSelection: Assets }>('assetSelectionEvent', { detail: { assetSelection } }));
+    ELEMENT.iframe?.dispatchEvent(
+        new CustomEvent<{ assetSelection: Assets }>('assetSelectionEvent', { detail: { assetSelection } }),
+    );
 }
 
 function handleAssetCancel() {
