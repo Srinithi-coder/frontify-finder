@@ -1,8 +1,36 @@
 import { logMessage } from './Logger';
-import { httpCall } from './Utils';
 
 const APP_NAME = 'FrontifyFinder';
 const APP_FINDER_TEMPLATE = 'external-asset-chooser';
+const APP_GRAPHQL_ENDPOINT = '/graphql';
+
+interface AssetsResponse {
+    errors?: AssetsResponseError[];
+    data?: {
+        assets: FrontifyAssets;
+    };
+    extensions: {
+        beta?: AssetsResponseBetaExtension[];
+        complexityScore: number;
+    };
+}
+
+type AssetsResponseError = {
+    extensions: {
+        category: string;
+    };
+    locations: AssetsResponseErrorLocation[];
+    message: string;
+};
+
+type AssetsResponseErrorLocation = {
+    column: number;
+    line: number;
+};
+
+type AssetsResponseBetaExtension = {
+    message: string;
+};
 
 type Settings = {
     container: HTMLElement;
@@ -25,9 +53,46 @@ type FinderEvent = {
     };
 };
 
-type FrontifyAssets = {
+type FrontifyAssets = FrontifyAsset[];
+
+type FrontifyAsset = {
     id: string;
-}[];
+    title: string;
+    description: string;
+    creator: {
+        name: string;
+    };
+    createdAt: string;
+    type: string;
+    licenses?: {
+        title: string;
+        text: string;
+    };
+    copyright?: {
+        status: string;
+        notice: string;
+    };
+    tags?: {
+        value: string;
+        source: string;
+    };
+    metadataValues?: {
+        value: string | number;
+        metadataField: {
+            id: string;
+            label: string;
+        };
+    };
+    filename: string;
+    size: number;
+    downloadUrl: URL;
+    previewUrl: URL;
+    focalPoint?: number[];
+    width?: number;
+    height?: number;
+    duration?: number;
+    bitrate?: number;
+};
 
 type Assets = Asset[];
 type Asset = {
@@ -120,12 +185,11 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
 function assetSelectionListener(success: (assets: FrontifyAssets) => void, cancel: () => void) {
     ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: CustomEventInit) => {
         const assetIds: number[] = [];
-        const assets: FrontifyAssets = [];
         event.detail.assetSelection.forEach((element: { id: number }) => {
             assetIds.push(element.id);
         });
 
-        httpCall(`https://${finderToken.bearerToken.domain}/graphql`, {
+        fetch(`https://${finderToken.bearerToken.domain}${APP_GRAPHQL_ENDPOINT}`, {
             method: 'POST',
             headers: {
                 authorization: `${finderToken.bearerToken.tokenType} ${finderToken.bearerToken.accessToken}`,
@@ -134,112 +198,126 @@ function assetSelectionListener(success: (assets: FrontifyAssets) => void, cance
             },
             body: JSON.stringify({
                 query: `
-                query AssetByIds($ids: [ID!]!) {
-                    assets(ids: $ids) {
-                        id
-                        title
-                        description
-                        creator {
-                            name
-                        }
-                        createdAt
-                        type: __typename
-                        ...withTags
-                        ...withCopyright
-                        ...withLicenses
-                        ...withMetadata
-                        ...onImage
-                        ...onDocument
-                        ...onFile
-                        ...onAudio
-                        ...onVideo
-                    }
-                }
-
-                fragment withLicenses on Asset {
-                    licenses {
-                        title
-                        text: license
-                    }
-                }
-
-                fragment withCopyright on Asset {
-                    copyright {
-                        status
-                        notice
-                    }
-                }
-
-                fragment withTags on Asset {
-                    tags {
-                        value
-                        source
-                    }
-                }
-
-                fragment withMetadata on Asset {
-                    metadataValues {
-                        value
-                        metadataField {
+                    query AssetByIds($ids: [ID!]!) {
+                        assets(ids: $ids) {
                             id
-                            label
+                            title
+                            description
+                            creator {
+                                name
+                            }
+                            createdAt
+                            type: __typename
+                            ...withTags
+                            ...withCopyright
+                            ...withLicenses
+                            ...withMetadata
+                            ...onImage
+                            ...onDocument
+                            ...onFile
+                            ...onAudio
+                            ...onVideo
                         }
                     }
-                }
 
-                fragment onImage on Image {
-                    filename
-                    size
-                    downloadUrl(validityInDays: 1)
-                    previewUrl
-                    width
-                    height
-                    focalPoint
-                }
+                    fragment withLicenses on Asset {
+                        licenses {
+                            title
+                            text: license
+                        }
+                    }
 
-                fragment onFile on File {
-                    filename
-                    size
-                    downloadUrl(validityInDays: 1)
-                    icon: previewUrl
-                }
+                    fragment withCopyright on Asset {
+                        copyright {
+                            status
+                            notice
+                        }
+                    }
 
-                fragment onDocument on Document {
-                    filename
-                    size
-                    downloadUrl(validityInDays: 1)
-                    previewUrl
-                    focalPoint
-                }
+                    fragment withTags on Asset {
+                        tags {
+                            value
+                            source
+                        }
+                    }
 
-                fragment onAudio on Audio {
-                    filename
-                    size
-                    downloadUrl(validityInDays: 1)
-                    previewUrl
-                }
+                    fragment withMetadata on Asset {
+                        metadataValues {
+                            value
+                            metadataField {
+                                id
+                                label
+                            }
+                        }
+                    }
 
-                fragment onVideo on Video {
-                    filename
-                    size
-                    downloadUrl(validityInDays: 1)
-                    previewUrl
-                    width
-                    height
-                    duration
-                    bitrate
-                }`,
+                    fragment onImage on Image {
+                        filename
+                        size
+                        downloadUrl(validityInDays: 1)
+                        previewUrl
+                        width
+                        height
+                        focalPoint
+                    }
+
+                    fragment onFile on File {
+                        filename
+                        size
+                        downloadUrl(validityInDays: 1)
+                        previewUrl
+                    }
+
+                    fragment onDocument on Document {
+                        filename
+                        size
+                        downloadUrl(validityInDays: 1)
+                        previewUrl
+                        focalPoint
+                    }
+
+                    fragment onAudio on Audio {
+                        filename
+                        size
+                        downloadUrl(validityInDays: 1)
+                        previewUrl
+                    }
+
+                    fragment onVideo on Video {
+                        filename
+                        size
+                        downloadUrl(validityInDays: 1)
+                        previewUrl
+                        width
+                        height
+                        duration
+                        bitrate
+                    }
+                `,
                 variables: { ids: assetIds },
             }),
         })
-            .then((response: any) => {
-                assets.push(response.data.assets);
+            .then(async (response) => {
+                if (response.status >= 200 && response.status <= 299) {
+                    return await response.json();
+                }
+                throw new Error(response.statusText);
             })
-            .catch((error) => {
+            .then((result: AssetsResponse) => {
+                if (result.errors) {
+                    throw new Error(result.errors[0].message);
+                }
+
+                if (!result.data) {
+                    throw new Error('No data returned!');
+                }
+
+                console.log(result);
+                success(result.data.assets);
+            })
+            .catch((error: string) => {
                 throw new Error(error);
             });
-
-        success(assets);
     });
     ELEMENT.iframe?.addEventListener('assetCancelEvent', () => cancel());
 }
