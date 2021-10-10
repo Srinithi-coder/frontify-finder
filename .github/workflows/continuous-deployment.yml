@@ -64,7 +64,7 @@ jobs:
               if: steps.npm_cache.outputs.cache-hit != 'true'
               run: npm ci
 
-            - name: Build Frontify Authenticator
+            - name: Build Frontify Finder
               run: npm run build
 
             - name: Publish to npm
