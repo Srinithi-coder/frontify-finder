@@ -28,7 +28,7 @@ import { open } from '@frontify/frontify-finder';
 
 ## CDN
 
-Alternatively, in case you're not relying on npm packages in your web app, you can also require the minified JS script directly by using a CDN such as UPAKG. You can find the latest [Frontify Authenticator v2 source code](https://unpkg.com/@frontify/frontify-authenticator@latest/dist/index.js) and [Frontify Finder v2](https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js) and import it to your project you by requiring it via a `<script>` HTML element.
+Alternatively, in case you're not relying on npm packages in your web app, you can also require the minified JS script directly by using a CDN such as UPAKG. You can find the latest [Frontify Authenticator v2](https://unpkg.com/@frontify/frontify-authenticator@latest/dist/index.js) and [Frontify Finder v2](https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js) source code and import it to your project you by requiring it via a `<script>` HTML element.
 
 ```
 <script src="https://unpkg.com/@frontify/frontify-authenticator@latest/dist/index.js"></script>
