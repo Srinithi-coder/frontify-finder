@@ -312,7 +312,6 @@ function assetSelectionListener(success: (assets: FrontifyAssets) => void, cance
                     throw new Error('No data returned!');
                 }
 
-                console.log(result);
                 success(result.data.assets);
             })
             .catch((error: string) => {
@@ -328,12 +327,6 @@ function messageHandler(e: FinderEvent) {
     }
 
     if (e.data.error) {
-        const parsedError = JSON.parse(e.data.error);
-
-        if (parsedError && parsedError.status === 401) {
-            console.log('error');
-        }
-
         logMessage('error', {
             code: 'ERR_FINDER_MESSAGE',
             message: e.data.error,
