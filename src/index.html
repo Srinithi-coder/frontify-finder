@@ -65,7 +65,7 @@
 <div id="FinderFrame"></div>
 <script src="https://unpkg.com/@frontify/frontify-authenticator@latest/dist/index.js"></script>
 <script src="https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js"></script>
-<script type="module">
+<script>
     const POPUP_CONFIG = {
         width: 800,
         height: 600,
@@ -79,7 +79,7 @@
         scopes: ['basic:read', 'finder:read', 'api:v1'],
     };
 
-    let token = localStorage.getItem('FrontifyFinderToken');
+    let token = localStorage.getItem('FrontifyAuthenticatorToken');
 
     function finderAction() {
         if (token) {
@@ -88,8 +88,8 @@
             FrontifyAuthenticator.authorize(AUTHORIZATION_CONFIG, POPUP_CONFIG)
                 .then((res) => {
                     if (res) {
-                        localStorage.setItem('FrontifyFinderToken', JSON.stringify(res));
-                        token = localStorage.getItem('FrontifyFinderToken');
+                        localStorage.setItem('FrontifyAuthenticatorToken', JSON.stringify(res));
+                        token = localStorage.getItem('FrontifyAuthenticatorToken');
                         openFinder();
                     }
                 })
@@ -108,7 +108,7 @@
         FrontifyAuthenticator.revoke(JSON.parse(token))
             .then((res) => {
                 if (res) {
-                    localStorage.removeItem('FrontifyFinderToken');
+                    localStorage.removeItem('FrontifyAuthenticatorToken');
                     token = null;
                     delete AUTHORIZATION_CONFIG.domain;
                 }
@@ -127,8 +127,8 @@
         FrontifyAuthenticator.refresh(JSON.parse(token))
             .then((res) => {
                 if (res) {
-                    localStorage.setItem('FrontifyFinderToken', JSON.stringify(res));
-                    token = localStorage.getItem('FrontifyFinderToken');
+                    localStorage.setItem('FrontifyAuthenticatorToken', JSON.stringify(res));
+                    token = localStorage.getItem('FrontifyAuthenticatorToken');
                 }
             })
             .catch((error) => {
