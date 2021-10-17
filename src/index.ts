@@ -165,6 +165,15 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
     });
 }
 
+export function close(): void {
+    isOpen = false;
+
+    if (ELEMENT.container && ELEMENT.container.style.display !== 'none') {
+        ELEMENT.container.style.display = 'none';
+        ELEMENT.iframe?.parentNode?.removeChild(ELEMENT.iframe);
+    }
+}
+
 function setElement(domain: string, container: HTMLElement): void {
     ELEMENT.iframe = document.createElement('iframe');
     ELEMENT.iframe.style.display = 'none';
@@ -374,13 +383,4 @@ function handleAssetSelection(assetSelection: Assets): void {
 
 function handleAssetCancel(): void {
     ELEMENT.iframe?.dispatchEvent(new CustomEvent('assetCancelEvent'));
-}
-
-function close(): void {
-    isOpen = false;
-
-    if (ELEMENT.container && ELEMENT.container.style.display !== 'none') {
-        ELEMENT.container.style.display = 'none';
-        ELEMENT.iframe?.parentNode?.removeChild(ELEMENT.iframe);
-    }
 }
