@@ -1,3 +1,4 @@
+import { FinderError } from './Exception';
 import { logMessage } from './Logger';
 
 const APP_NAME = 'FrontifyFinder';
@@ -133,13 +134,9 @@ let finderToken: TokenConfiguration;
 let finderSettings: Settings | null = null;
 let isOpen = false;
 
-export async function open(token: TokenConfiguration, settings: Settings): Promise<FrontifyAssets | void> {
+export async function open(token: TokenConfiguration, settings: Settings): Promise<FrontifyAssets> {
     if (isOpen) {
-        logMessage('warning', {
-            code: 'WARN_FINDER_OPEN',
-            message: 'Finder window is already open!',
-        });
-        return;
+        close();
     }
 
     isOpen = true;
@@ -151,17 +148,35 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
     finderToken = token;
     finderSettings = settings;
 
+    setElement(token.bearerToken.domain, settings.container);
+
+    return new Promise((resolve) => {
+        assetSelectionListener(
+            (assets: FrontifyAssets) => {
+                resolve(assets);
+            },
+            () => {
+                logMessage('warning', {
+                    code: 'WARN_FINDER_CANCELLED',
+                    message: 'Finder cancelled.',
+                });
+            },
+        );
+    });
+}
+
+function setElement(domain: string, container: HTMLElement): void {
     ELEMENT.iframe = document.createElement('iframe');
     ELEMENT.iframe.style.display = 'none';
     ELEMENT.iframe.style.width = 'inherit';
     ELEMENT.iframe.style.height = 'inherit';
     ELEMENT.iframe.style.overflow = 'auto';
     ELEMENT.iframe.style.border = '0';
-    ELEMENT.iframe.setAttribute('src', `https://${token.bearerToken.domain}/${APP_FINDER_TEMPLATE}`);
+    ELEMENT.iframe.setAttribute('src', `https://${domain}/${APP_FINDER_TEMPLATE}`);
     ELEMENT.iframe.setAttribute('name', `${APP_NAME}Frame`);
     ELEMENT.iframe.style.display = 'block';
 
-    ELEMENT.container = settings.container;
+    ELEMENT.container = container;
     ELEMENT.container.appendChild(ELEMENT.iframe);
     ELEMENT.container.style.display = 'block';
 
@@ -169,17 +184,6 @@ export async function open(token: TokenConfiguration, settings: Settings): Promi
         ELEMENT.event = true;
         ELEMENT.window.addEventListener('message', messageHandler);
     }
-
-    return new Promise((resolve, reject) => {
-        assetSelectionListener(
-            (assets: FrontifyAssets) => {
-                resolve(assets);
-            },
-            () => {
-                reject();
-            },
-        );
-    });
 }
 
 function assetSelectionListener(success: (assets: FrontifyAssets) => void, cancel: () => void) {
@@ -301,21 +305,28 @@ function assetSelectionListener(success: (assets: FrontifyAssets) => void, cance
                 if (response.status >= 200 && response.status <= 299) {
                     return await response.json();
                 }
-                throw new Error(response.statusText);
+                throw new FinderError('ERR_FINDER_SELECT_ASSETS', response.statusText);
             })
             .then((result: AssetsResponse) => {
                 if (result.errors) {
-                    throw new Error(result.errors[0].message);
+                    logMessage('error', {
+                        code: 'ERR_FINDER_SELECT_ASSETS',
+                        message: 'Error selecting assets.',
+                    });
                 }
 
-                if (!result.data) {
-                    throw new Error('No data returned!');
+                if (!result.data || !result.data.assets) {
+                    throw new FinderError('ERR_FINDER_SELECT_ASSETS_EMPTY', 'No assets data returned.');
                 }
 
                 success(result.data.assets);
             })
-            .catch((error: string) => {
-                throw new Error(error);
+            .catch((error) => {
+                if (error instanceof FinderError) {
+                    throw new FinderError(error.code, error.message);
+                }
+
+                throw new FinderError('ERR_FINDER_SELECT_ASSETS', error);
             });
     });
     ELEMENT.iframe?.addEventListener('assetCancelEvent', () => cancel());
