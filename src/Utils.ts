@@ -1,15 +1,21 @@
-export async function httpCall<JsonResponse>(url: string, init?: RequestInit): Promise<JsonResponse> {
+import { FinderError } from './Exception';
+
+export async function httpCall<JsonResponse>(url: string, init?: RequestInit): Promise<JsonResponse | void> {
     return fetch(url, init)
         .then(async (response) => {
             if (response.status >= 200 && response.status <= 299) {
                 return (await response.json()) as JsonResponse;
             }
-            throw new Error(response.statusText);
+            throw new FinderError('ERR_HTTP_REQUEST', response.statusText);
         })
         .then((response: JsonResponse) => {
             return response;
         })
-        .catch((error: string) => {
-            throw new Error(error);
+        .catch((error: FinderError | string): void => {
+            if (error instanceof FinderError) {
+                throw new FinderError(error.code, error.message);
+            }
+
+            throw new FinderError('ERR_HTTP_REQUEST', error);
         });
 }

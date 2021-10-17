@@ -186,7 +186,7 @@ function setElement(domain: string, container: HTMLElement): void {
     }
 }
 
-function assetSelectionListener(success: (assets: FrontifyAssets) => void, cancel: () => void) {
+function assetSelectionListener(success: (assets: FrontifyAssets) => void, cancel: () => void): void {
     ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: CustomEventInit) => {
         const assetIds: number[] = [];
         event.detail.assetSelection.forEach((element: { id: number }) => {
@@ -301,7 +301,7 @@ function assetSelectionListener(success: (assets: FrontifyAssets) => void, cance
                 variables: { ids: assetIds },
             }),
         })
-            .then(async (response) => {
+            .then(async (response): Promise<AssetsResponse> => {
                 if (response.status >= 200 && response.status <= 299) {
                     return await response.json();
                 }
@@ -321,7 +321,7 @@ function assetSelectionListener(success: (assets: FrontifyAssets) => void, cance
 
                 success(result.data.assets);
             })
-            .catch((error) => {
+            .catch((error): void => {
                 if (error instanceof FinderError) {
                     throw new FinderError(error.code, error.message);
                 }
@@ -332,7 +332,7 @@ function assetSelectionListener(success: (assets: FrontifyAssets) => void, cance
     ELEMENT.iframe?.addEventListener('assetCancelEvent', () => cancel());
 }
 
-function messageHandler(e: FinderEvent) {
+function messageHandler(e: FinderEvent): void {
     if (!e.data) {
         return;
     }
@@ -366,17 +366,17 @@ function messageHandler(e: FinderEvent) {
     }
 }
 
-function handleAssetSelection(assetSelection: Assets) {
+function handleAssetSelection(assetSelection: Assets): void {
     ELEMENT.iframe?.dispatchEvent(
         new CustomEvent<{ assetSelection: Assets }>('assetSelectionEvent', { detail: { assetSelection } }),
     );
 }
 
-function handleAssetCancel() {
+function handleAssetCancel(): void {
     ELEMENT.iframe?.dispatchEvent(new CustomEvent('assetCancelEvent'));
 }
 
-function close() {
+function close(): void {
     isOpen = false;
 
     if (ELEMENT.container && ELEMENT.container.style.display !== 'none') {
