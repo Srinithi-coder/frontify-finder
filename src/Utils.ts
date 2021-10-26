@@ -1,6 +1,14 @@
 import { FinderError } from './Exception';
 
-export async function httpCall<JsonResponse>(url: string, init?: RequestInit): Promise<JsonResponse | void> {
+export function getFinderStoragePrefix(): string {
+    return 'FRONTIFY_FINDER';
+}
+
+export function computeStorageKey(clientId: string): string {
+    return `${getFinderStoragePrefix()}-${clientId}`;
+}
+
+export async function httpCall<JsonResponse>(url: string, init?: RequestInit): Promise<JsonResponse> {
     return fetch(url, init)
         .then(async (response) => {
             if (response.status >= 200 && response.status <= 299) {
@@ -11,11 +19,11 @@ export async function httpCall<JsonResponse>(url: string, init?: RequestInit): P
         .then((response: JsonResponse) => {
             return response;
         })
-        .catch((error: FinderError | string): void => {
+        .catch((error: Error) => {
             if (error instanceof FinderError) {
-                throw new FinderError(error.code, error.message);
+                throw error;
             }
 
-            throw new FinderError('ERR_HTTP_REQUEST', error);
+            throw new FinderError('ERR_HTTP_REQUEST', error.message);
         });
 }
