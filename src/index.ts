@@ -1,386 +1,78 @@
-import { FinderError } from './Exception';
+import { authorize, PopupConfiguration, revoke } from '@frontify/frontify-authenticator';
+import { getItem, popItem, setItem, Token } from './Storage';
+import { FrontifyFinder, FinderOptions, FrontifyAsset } from './Finder';
 import { logMessage } from './Logger';
+import { computeStorageKey } from './Utils';
+import { FinderError } from './Exception';
 
-const APP_NAME = 'FrontifyFinder';
-const APP_FINDER_TEMPLATE = 'external-asset-chooser';
-const APP_GRAPHQL_ENDPOINT = '/graphql';
+const FINDER_CLIENT_SCOPES = ['basic:read', 'finder:read'];
+const EXPIRES_IN_LEEWAY = 300;
 
-interface AssetsResponse {
-    errors?: AssetsResponseError[];
-    data?: {
-        assets: FrontifyAssets;
-    };
-    extensions: {
-        beta?: AssetsResponseBetaExtension[];
-        complexityScore: number;
-    };
-}
+export type { Token, FrontifyAsset, FinderOptions };
 
-type AssetsResponseError = {
-    extensions: {
-        category: string;
-    };
-    locations: AssetsResponseErrorLocation[];
-    message: string;
-};
-
-type AssetsResponseErrorLocation = {
-    column: number;
-    line: number;
-};
-
-type AssetsResponseBetaExtension = {
-    message: string;
-};
-
-type Settings = {
-    container: HTMLElement;
-    multiSelect?: boolean;
-    filters?: FilterSettings[];
-};
-
-type FilterSettings = {
-    key: string;
-    values: string[];
-    inverted: boolean;
-};
-
-type FinderEvent = {
-    data: {
-        aborted: boolean;
-        assetsChosen: [];
-        configurationRequested: boolean;
-        error: string;
-    };
-};
-
-type FrontifyAssets = FrontifyAsset[];
-
-type FrontifyAsset = {
-    id: string;
-    title: string;
-    description: string;
-    creator: {
-        name: string;
-    };
-    createdAt: string;
-    type: string;
-    licenses?: {
-        title: string;
-        text: string;
-    };
-    copyright?: {
-        status: string;
-        notice: string;
-    };
-    tags?: {
-        value: string;
-        source: string;
-    };
-    metadataValues?: {
-        value: string | number;
-        metadataField: {
-            id: string;
-            label: string;
-        };
-    };
-    filename: string;
-    size: number;
-    downloadUrl: URL;
-    previewUrl: URL;
-    focalPoint?: number[];
-    width?: number;
-    height?: number;
-    duration?: number;
-    bitrate?: number;
-};
-
-type Assets = Asset[];
-type Asset = {
-    id?: number;
-};
-
-type TokenConfiguration = {
-    bearerToken: {
-        tokenType: string;
-        expiresIn: number;
-        accessToken: string;
-        refreshToken: string;
-        domain: string;
-    };
+type ClientConfiguration = {
     clientId: string;
-    scopes: string[];
+    domain?: string;
 };
 
-const DEFAULT_SETTINGS: {
-    multiSelect: boolean;
-} = {
-    multiSelect: true,
+export type OpeningOptions = ClientConfiguration & {
+    options?: FinderOptions;
 };
 
-const ELEMENT: {
-    event: boolean;
-    container: HTMLElement | null;
-    iframe: HTMLIFrameElement | null;
-    window: Window;
-} = {
-    event: false,
-    container: null,
-    iframe: null,
-    window: window,
+const DEFAULT_OPTIONS: FinderOptions = {
+    autoClose: false,
+    allowMultiSelect: false,
+    filters: [],
 };
 
-let finderToken: TokenConfiguration;
-let finderSettings: Settings | null = null;
-let isOpen = false;
-
-export async function open(token: TokenConfiguration, settings: Settings): Promise<FrontifyAssets> {
-    if (isOpen) {
-        close();
-    }
-
-    isOpen = true;
-
-    if (settings.multiSelect === undefined) {
-        settings.multiSelect = DEFAULT_SETTINGS.multiSelect;
-    }
-
-    finderToken = token;
-    finderSettings = settings;
-
-    setElement(token.bearerToken.domain, settings.container);
-
-    return new Promise((resolve) => {
-        assetSelectionListener(
-            (assets: FrontifyAssets) => {
-                resolve(assets);
-            },
-            () => {
-                logMessage('warning', {
-                    code: 'WARN_FINDER_CANCELLED',
-                    message: 'Finder cancelled.',
+export async function create(
+    { clientId, domain, options }: OpeningOptions,
+    popupConfiguration?: PopupConfiguration,
+): Promise<FrontifyFinder> {
+    if (!isAuthorized({ clientId })) {
+        const token = (await authorize({ domain, clientId, scopes: FINDER_CLIENT_SCOPES }, popupConfiguration)
+            .then((token) => {
+                return token;
+            })
+            .catch(() => {
+                logMessage('error', {
+                    code: 'ERR_FINDER_AUTH_FAILED',
+                    message: 'Authentication Failed!',
                 });
-            },
-        );
+            })) as Token;
+        storeAccessToken(token, { clientId });
+    }
+
+    const token = getItem<Token>(computeStorageKey(clientId));
+    if (!token) {
+        throw new FinderError('ERR_FINDER_GET_STORED_TOKEN', 'Error while getting stored access token');
+    }
+
+    return new FrontifyFinder(token, options ?? DEFAULT_OPTIONS, async () => {
+        await logout({ clientId });
+        logMessage('warning', {
+            code: 'WARN_USER_LOGOUT',
+            message: 'User successfully logged out',
+        });
     });
 }
 
-export function close(): void {
-    isOpen = false;
+export async function logout({ clientId }: { clientId: string }): Promise<void> {
+    const storageKey = computeStorageKey(clientId);
+    const token = popItem<Token>(storageKey);
 
-    if (ELEMENT.container && ELEMENT.container.style.display !== 'none') {
-        ELEMENT.container.style.display = 'none';
-        ELEMENT.iframe?.parentNode?.removeChild(ELEMENT.iframe);
+    if (token) {
+        await revoke(token);
     }
 }
 
-function setElement(domain: string, container: HTMLElement): void {
-    ELEMENT.iframe = document.createElement('iframe');
-    ELEMENT.iframe.style.display = 'none';
-    ELEMENT.iframe.style.width = 'inherit';
-    ELEMENT.iframe.style.height = 'inherit';
-    ELEMENT.iframe.style.overflow = 'auto';
-    ELEMENT.iframe.style.border = '0';
-    ELEMENT.iframe.setAttribute('src', `https://${domain}/${APP_FINDER_TEMPLATE}`);
-    ELEMENT.iframe.setAttribute('name', `${APP_NAME}Frame`);
-    ELEMENT.iframe.style.display = 'block';
-
-    ELEMENT.container = container;
-    ELEMENT.container.appendChild(ELEMENT.iframe);
-    ELEMENT.container.style.display = 'block';
-
-    if (!ELEMENT.event) {
-        ELEMENT.event = true;
-        ELEMENT.window.addEventListener('message', messageHandler);
-    }
+function isAuthorized({ clientId }: ClientConfiguration): boolean {
+    const storageKey: string = computeStorageKey(clientId);
+    return !!getItem<Token>(storageKey);
 }
 
-function assetSelectionListener(success: (assets: FrontifyAssets) => void, cancel: () => void): void {
-    ELEMENT.iframe?.addEventListener('assetSelectionEvent', (event: CustomEventInit) => {
-        const assetIds: number[] = [];
-        event.detail.assetSelection.forEach((element: { id: number }) => {
-            assetIds.push(element.id);
-        });
-
-        fetch(`https://${finderToken.bearerToken.domain}${APP_GRAPHQL_ENDPOINT}`, {
-            method: 'POST',
-            headers: {
-                authorization: `${finderToken.bearerToken.tokenType} ${finderToken.bearerToken.accessToken}`,
-                'content-type': 'application/json',
-                'X-Frontify-Beta': 'enabled',
-            },
-            body: JSON.stringify({
-                query: `
-                    query AssetByIds($ids: [ID!]!) {
-                        assets(ids: $ids) {
-                            id
-                            title
-                            description
-                            creator {
-                                name
-                            }
-                            createdAt
-                            type: __typename
-                            ...withTags
-                            ...withCopyright
-                            ...withLicenses
-                            ...withMetadata
-                            ...onImage
-                            ...onDocument
-                            ...onFile
-                            ...onAudio
-                            ...onVideo
-                        }
-                    }
-
-                    fragment withLicenses on Asset {
-                        licenses {
-                            title
-                            text: license
-                        }
-                    }
-
-                    fragment withCopyright on Asset {
-                        copyright {
-                            status
-                            notice
-                        }
-                    }
-
-                    fragment withTags on Asset {
-                        tags {
-                            value
-                            source
-                        }
-                    }
-
-                    fragment withMetadata on Asset {
-                        metadataValues {
-                            value
-                            metadataField {
-                                id
-                                label
-                            }
-                        }
-                    }
-
-                    fragment onImage on Image {
-                        filename
-                        size
-                        downloadUrl(validityInDays: 1)
-                        previewUrl
-                        width
-                        height
-                        focalPoint
-                    }
-
-                    fragment onFile on File {
-                        filename
-                        size
-                        downloadUrl(validityInDays: 1)
-                        previewUrl
-                    }
-
-                    fragment onDocument on Document {
-                        filename
-                        size
-                        downloadUrl(validityInDays: 1)
-                        previewUrl
-                        focalPoint
-                    }
-
-                    fragment onAudio on Audio {
-                        filename
-                        size
-                        downloadUrl(validityInDays: 1)
-                        previewUrl
-                    }
-
-                    fragment onVideo on Video {
-                        filename
-                        size
-                        downloadUrl(validityInDays: 1)
-                        previewUrl
-                        width
-                        height
-                        duration
-                        bitrate
-                    }
-                `,
-                variables: { ids: assetIds },
-            }),
-        })
-            .then(async (response): Promise<AssetsResponse> => {
-                if (response.status >= 200 && response.status <= 299) {
-                    return await response.json();
-                }
-                throw new FinderError('ERR_FINDER_SELECT_ASSETS', response.statusText);
-            })
-            .then((result: AssetsResponse) => {
-                if (result.errors) {
-                    logMessage('error', {
-                        code: 'ERR_FINDER_SELECT_ASSETS',
-                        message: 'Error selecting assets.',
-                    });
-                }
-
-                if (!result.data || !result.data.assets) {
-                    throw new FinderError('ERR_FINDER_SELECT_ASSETS_EMPTY', 'No assets data returned.');
-                }
-
-                success(result.data.assets);
-            })
-            .catch((error): void => {
-                if (error instanceof FinderError) {
-                    throw new FinderError(error.code, error.message);
-                }
-
-                throw new FinderError('ERR_FINDER_SELECT_ASSETS', error);
-            });
-    });
-    ELEMENT.iframe?.addEventListener('assetCancelEvent', () => cancel());
-}
-
-function messageHandler(e: FinderEvent): void {
-    if (!e.data) {
-        return;
-    }
-
-    if (e.data.error) {
-        logMessage('error', {
-            code: 'ERR_FINDER_MESSAGE',
-            message: e.data.error,
-        });
-    }
-
-    if (e.data.configurationRequested) {
-        ELEMENT.iframe?.contentWindow?.postMessage(
-            {
-                token: finderToken?.bearerToken.accessToken,
-                multiSelectionAllowed: finderSettings?.multiSelect,
-                filters: finderSettings?.filters,
-            },
-            `https://${finderToken?.bearerToken.domain}`,
-        );
-    }
-
-    if (e.data.assetsChosen) {
-        handleAssetSelection(e.data.assetsChosen);
-        close();
-    }
-
-    if (e.data.aborted) {
-        handleAssetCancel();
-        close();
-    }
-}
-
-function handleAssetSelection(assetSelection: Assets): void {
-    ELEMENT.iframe?.dispatchEvent(
-        new CustomEvent<{ assetSelection: Assets }>('assetSelectionEvent', { detail: { assetSelection } }),
-    );
-}
-
-function handleAssetCancel(): void {
-    ELEMENT.iframe?.dispatchEvent(new CustomEvent('assetCancelEvent'));
+function storeAccessToken(token: Token, { clientId }: ClientConfiguration): void {
+    const expiresIn: number = token.bearerToken.expiresIn - EXPIRES_IN_LEEWAY;
+    const key: string = computeStorageKey(clientId);
+    setItem(key, token, expiresIn);
 }
