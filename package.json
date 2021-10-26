@@ -1,6 +1,6 @@
 {
     "name": "@frontify/frontify-finder",
-    "version": "2.0.0-beta.0",
+    "version": "2.0.0-beta.1",
     "description": "Search and access Frontify assets data from any secure web app (to be used alongside Frontify Authenticator v2).",
     "files": [
         "dist/**/*"
@@ -45,6 +45,8 @@
     "homepage": "https://developer.frontify.com/",
     "devDependencies": {
         "@frontify/eslint-config-typescript": "^0.11.0",
+        "@frontify/frontify-authenticator": "^2.0.0-beta.2",
+        "@rollup/plugin-node-resolve": "^13.0.6",
         "@types/node": "^16.7.13",
         "cross-env": "^7.0.3",
         "esbuild": "^0.12.17",
