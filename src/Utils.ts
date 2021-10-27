@@ -14,7 +14,7 @@ export async function httpCall<JsonResponse>(url: string, init?: RequestInit): P
             if (response.status >= 200 && response.status <= 299) {
                 return (await response.json()) as JsonResponse;
             }
-            throw new FinderError('ERR_HTTP_REQUEST', response.statusText);
+            throw new FinderError('ERR_FINDER_HTTP_REQUEST', response.statusText);
         })
         .then((response: JsonResponse) => {
             return response;
@@ -24,6 +24,6 @@ export async function httpCall<JsonResponse>(url: string, init?: RequestInit): P
                 throw error;
             }
 
-            throw new FinderError('ERR_HTTP_REQUEST', error.message);
+            throw new FinderError('ERR_FINDER_HTTP_REQUEST', error.message);
         });
 }

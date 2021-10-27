@@ -185,14 +185,14 @@ export async function requestAssetsById({ domain, bearerToken }: Options, ids: A
 
     if (response.errors) {
         logMessage('error', {
-            code: 'ERR_FINDER_ASSETS_ERRORS',
-            message: 'Failed to enrich assets.',
+            code: 'ERR_FINDER_ASSETS_REQUEST',
+            message: 'Assets data request failed.',
             error: response.errors[0],
         });
     }
 
     if (!response?.data?.assets || response.data.assets.length === 0) {
-        throw new FinderError('ERR_FINDER_ASSETS_DATA', 'No assets returned by request.');
+        throw new FinderError('ERR_FINDER_ASSETS_REQUEST_EMPTY', 'Assets data request returned no valid values.');
     }
 
     return response.data.assets.map((asset: FrontifyAsset) => {

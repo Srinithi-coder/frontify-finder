@@ -45,7 +45,7 @@ export async function create(
 
     const token = getItem<Token>(computeStorageKey(clientId));
     if (!token) {
-        throw new FinderError('ERR_FINDER_GET_STORED_TOKEN', 'Error while getting stored access token');
+        throw new FinderError('ERR_FINDER_ACCESS_STORED_TOKEN', 'Error accessing stored token.');
     }
 
     return new FrontifyFinder(token, options ?? DEFAULT_OPTIONS, async () => {
