@@ -34,9 +34,10 @@ export class FrontifyFinder {
     }
 
     private subscribeToFinderEvents() {
-        this.unsubscribe = subscribeToEvents(window, 'message', (event: MessageEventInit) => {
-            // Ensure the events are originating form the right source
-            if (this.iFrame.contentWindow !== event.source || event.origin !== this.origin || !this.parentNode) {
+        const windowObject = this.parentNode?.ownerDocument?.defaultView || window;
+        this.unsubscribe = subscribeToEvents(windowObject, 'message', (event: MessageEventInit) => {
+            // Ensure the events are originating from the right source
+            if (this.iFrame.contentWindow !== event.source || event.origin !== this.origin) {
                 return;
             }
 
@@ -67,7 +68,7 @@ export class FrontifyFinder {
 
             logMessage('warning', {
                 code: 'WARN_FINDER_UNKNOWN_EVENT',
-                message: 'Unknown event from Frontify Finder',
+                message: 'Unknown event from Frontify Finder.',
             });
         });
     }
@@ -152,8 +153,8 @@ export class FrontifyFinder {
             throw new FinderError('ERR_FINDER_ALREADY_MOUNTED', 'Frontify Finder already mounted on a parent node.');
         }
 
-        this.subscribeToFinderEvents();
         this.parentNode = parentNode;
+        this.subscribeToFinderEvents();
         this.parentNode.appendChild(this.iFrame);
     }
 
