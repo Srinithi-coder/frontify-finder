@@ -77,6 +77,7 @@ export type FrontifyAsset = {
     height?: number;
     duration?: number;
     bitrate?: number;
+    pageCount?: number;
 };
 
 const ASSET_BY_IDS_QUERY = `
@@ -141,6 +142,7 @@ fragment onFile on File {
 fragment onDocument on Document {
   filename
   size
+  pageCount
   downloadUrl(validityInDays: 1)
   previewUrl
   focalPoint
