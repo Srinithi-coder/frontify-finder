@@ -48,6 +48,8 @@ export type FrontifyAsset = {
     };
     createdAt: string;
     type: string;
+    author: string;
+    expiresAt?: string;
     licenses?: {
         title: string;
         text: string;
@@ -68,6 +70,7 @@ export type FrontifyAsset = {
         };
     };
     filename: string;
+    extension: string;
     size: number;
     downloadUrl?: string;
     previewUrl?: string;
@@ -91,6 +94,7 @@ query AssetByIds($ids: [ID!]!) {
       name
     }
     createdAt
+    expiresAt
     ...withMetadata
     ...onImage
     ...onDocument
@@ -123,7 +127,9 @@ fragment withMetadata on Asset {
 }
 
 fragment onImage on Image {
+  author
   filename
+  extension
   size
   downloadUrl(validityInDays: 1)
   previewUrl
@@ -133,14 +139,18 @@ fragment onImage on Image {
 }
 
 fragment onFile on File {
+  author
   filename
+  extension
   size
   downloadUrl(validityInDays: 1)
   icon: previewUrl
 }
 
 fragment onDocument on Document {
+  author
   filename
+  extension
   size
   pageCount
   downloadUrl(validityInDays: 1)
@@ -149,14 +159,18 @@ fragment onDocument on Document {
 }
 
 fragment onAudio on Audio {
+  author
   filename
+  extension
   size
   downloadUrl(validityInDays: 1)
   previewUrl
 }
 
 fragment onVideo on Video {
+  author
   filename
+  extension
   size
   downloadUrl(validityInDays: 1)
   previewUrl
