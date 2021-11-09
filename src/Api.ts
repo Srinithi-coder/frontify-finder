@@ -212,7 +212,7 @@ export async function requestAssetsById({ domain, bearerToken }: Options, ids: A
     }
 
     return response.data.assets.map((asset: FrontifyAsset) => {
-        if (asset.previewUrl && asset.previewUrl.includes('width={width}')) {
+        if (asset.previewUrl) {
             asset.previewUrl = asset.previewUrl.split('?')[0];
         }
 
