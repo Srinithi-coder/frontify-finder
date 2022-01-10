@@ -9,6 +9,7 @@ export type FinderOptions = {
     allowMultiSelect?: boolean;
     autoClose?: boolean;
     filters?: FinderFilters;
+    permanentDownloadUrls?: boolean;
 };
 
 type FinderFilters = FinderFilter[] | [];
@@ -117,6 +118,7 @@ export class FrontifyFinder {
                 {
                     domain: this.domain,
                     bearerToken: this.accessToken,
+                    permanentDownloadUrls: this.options?.permanentDownloadUrls ?? false,
                 },
                 assetIds,
             );

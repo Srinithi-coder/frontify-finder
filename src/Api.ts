@@ -5,6 +5,7 @@ import { httpCall } from './Utils';
 type Options = {
     domain: string;
     bearerToken: string;
+    permanentDownloadUrls: boolean;
 };
 
 type AssetsResponse = {
@@ -131,7 +132,7 @@ fragment onImage on Image {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1)
+  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
   previewUrl
   width
   height
@@ -143,7 +144,7 @@ fragment onFile on File {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1)
+  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
   icon: previewUrl
 }
 
@@ -153,7 +154,7 @@ fragment onDocument on Document {
   extension
   size
   pageCount
-  downloadUrl(validityInDays: 1)
+  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
   previewUrl
   focalPoint
 }
@@ -163,7 +164,7 @@ fragment onAudio on Audio {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1)
+  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
   previewUrl
 }
 
@@ -172,7 +173,7 @@ fragment onVideo on Video {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1)
+  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
   previewUrl
   width
   height
@@ -181,7 +182,10 @@ fragment onVideo on Video {
 }
 `;
 
-export async function requestAssetsById({ domain, bearerToken }: Options, ids: Asset[]): Promise<FrontifyAsset[]> {
+export async function requestAssetsById(
+    { domain, bearerToken, permanentDownloadUrls }: Options,
+    ids: Asset[],
+): Promise<FrontifyAsset[]> {
     const response = await httpCall(`https://${domain}/graphql`, {
         method: 'POST',
         headers: {
@@ -190,13 +194,13 @@ export async function requestAssetsById({ domain, bearerToken }: Options, ids: A
             'x-frontify-beta': 'enabled',
         },
         body: JSON.stringify({
-            query: ASSET_BY_IDS_QUERY,
+            query: ASSET_BY_IDS_QUERY.replaceAll('<PERMANENT_VALUE>', permanentDownloadUrls.toString()),
             variables: {
                 ids,
             },
         }),
-    }).then((response) => {
-        return response as AssetsResponse;
+    }).then((assetsResponse) => {
+        return assetsResponse as AssetsResponse;
     });
 
     if (response.errors) {
