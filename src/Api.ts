@@ -132,7 +132,7 @@ fragment onImage on Image {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: <PERMANENT_VALUE>)
   previewUrl
   width
   height
@@ -144,7 +144,7 @@ fragment onFile on File {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: <PERMANENT_VALUE>)
   icon: previewUrl
 }
 
@@ -154,7 +154,7 @@ fragment onDocument on Document {
   extension
   size
   pageCount
-  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: <PERMANENT_VALUE>)
   previewUrl
   focalPoint
 }
@@ -164,7 +164,7 @@ fragment onAudio on Audio {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: <PERMANENT_VALUE>)
   previewUrl
 }
 
@@ -173,7 +173,7 @@ fragment onVideo on Video {
   filename
   extension
   size
-  downloadUrl(validityInDays: 1, permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: <PERMANENT_VALUE>)
   previewUrl
   width
   height
