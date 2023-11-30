@@ -86,7 +86,7 @@ export type FrontifyAsset = {
 };
 
 const ASSET_BY_IDS_QUERY = `
-query AssetByIds($ids: [ID!]!) {
+query AssetByIds($ids: [ID!]!, $permanent: Boolean!) {
   assets(ids: $ids) {
     id
     title
@@ -133,7 +133,7 @@ fragment onImage on Image {
   filename
   extension
   size
-  downloadUrl(permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: $permanent)
   previewUrl
   dynamicPreviewUrl
   width
@@ -146,7 +146,7 @@ fragment onFile on File {
   filename
   extension
   size
-  downloadUrl(permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: $permanent)
   icon: previewUrl
   dynamicPreviewUrl
 }
@@ -157,7 +157,7 @@ fragment onDocument on Document {
   extension
   size
   pageCount
-  downloadUrl(permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: $permanent)
   previewUrl
   dynamicPreviewUrl
   focalPoint
@@ -168,7 +168,7 @@ fragment onAudio on Audio {
   filename
   extension
   size
-  downloadUrl(permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: $permanent)
   previewUrl
   dynamicPreviewUrl
 }
@@ -178,7 +178,7 @@ fragment onVideo on Video {
   filename
   extension
   size
-  downloadUrl(permanent: <PERMANENT_VALUE>)
+  downloadUrl(permanent: $permanent)
   previewUrl
   dynamicPreviewUrl
   width
@@ -192,7 +192,7 @@ export async function requestAssetsById(
     { domain, bearerToken, permanentDownloadUrls }: Options,
     ids: Asset[],
 ): Promise<FrontifyAsset[]> {
-    const response = await httpCall(`https://${domain}/graphql`, {
+    const response = (await httpCall(`https://${domain}/graphql`, {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
@@ -200,14 +200,13 @@ export async function requestAssetsById(
             'x-frontify-beta': 'enabled',
         },
         body: JSON.stringify({
-            query: ASSET_BY_IDS_QUERY.replaceAll('<PERMANENT_VALUE>', permanentDownloadUrls.toString()),
+            query: ASSET_BY_IDS_QUERY,
             variables: {
                 ids,
+                permanent: permanentDownloadUrls,
             },
         }),
-    }).then((assetsResponse) => {
-        return assetsResponse as AssetsResponse;
-    });
+    })) as AssetsResponse;
 
     if (response.errors) {
         logMessage('error', {
