@@ -198,6 +198,7 @@ export async function requestAssetsById(
             'content-type': 'application/json',
             authorization: `Bearer ${bearerToken}`,
             'x-frontify-beta': 'enabled',
+            'x-frontify-development-flags': 'PUBLIC_API_DYNAMIC_CDN',
         },
         body: JSON.stringify({
             query: ASSET_BY_IDS_QUERY,
