@@ -75,6 +75,7 @@ export type FrontifyAsset = {
     size: number;
     downloadUrl?: string;
     previewUrl?: string;
+    dynamicPreviewUrl?: string;
     icon?: string;
     focalPoint?: number[];
     width?: number;
@@ -134,6 +135,7 @@ fragment onImage on Image {
   size
   downloadUrl(permanent: $permanent)
   previewUrl
+  dynamicPreviewUrl
   width
   height
   focalPoint
@@ -146,6 +148,7 @@ fragment onFile on File {
   size
   downloadUrl(permanent: $permanent)
   icon: previewUrl
+  dynamicPreviewUrl
 }
 
 fragment onDocument on Document {
@@ -156,6 +159,7 @@ fragment onDocument on Document {
   pageCount
   downloadUrl(permanent: $permanent)
   previewUrl
+  dynamicPreviewUrl
   focalPoint
 }
 
@@ -166,6 +170,7 @@ fragment onAudio on Audio {
   size
   downloadUrl(permanent: $permanent)
   previewUrl
+  dynamicPreviewUrl
 }
 
 fragment onVideo on Video {
@@ -175,6 +180,7 @@ fragment onVideo on Video {
   size
   downloadUrl(permanent: $permanent)
   previewUrl
+  dynamicPreviewUrl
   width
   height
   duration
@@ -192,6 +198,7 @@ export async function requestAssetsById(
             'content-type': 'application/json',
             authorization: `Bearer ${bearerToken}`,
             'x-frontify-beta': 'enabled',
+            'x-frontify-development-flags': 'PUBLIC_API_DYNAMIC_CDN',
         },
         body: JSON.stringify({
             query: ASSET_BY_IDS_QUERY,
