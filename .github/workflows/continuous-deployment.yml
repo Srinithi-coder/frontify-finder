@@ -72,11 +72,11 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-            - name: Use Node.js 16 (GitHub repository)
-              uses: actions/setup-node@v2
+            - name: Use Node.js (GitHub repository)
+              uses: actions/setup-node@v4
               with:
+                  node-version-file: '.nvmrc'
                   registry-url: 'https://npm.pkg.github.com'
-                  node-version: 16
 
             - name: Publish to GitHub Packages
               run: npm publish --access public
