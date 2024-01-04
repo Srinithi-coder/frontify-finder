@@ -10,7 +10,7 @@ jobs:
 
         steps:
             - name: Checkout default branch
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
             - name: Use Node.js
               uses: actions/setup-node@v4
@@ -19,7 +19,7 @@ jobs:
 
             - name: Cache dependencies
               id: npm_cache
-              uses: actions/cache@v2
+              uses: actions/cache@v3
               with:
                   path: '**/node_modules'
                   key: node16-${{ hashFiles('package-lock.json') }}
@@ -45,7 +45,7 @@ jobs:
 
         steps:
             - name: Checkout default branch
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
             - name: Use Node.js (npm repository)
               uses: actions/setup-node@v4
@@ -55,7 +55,7 @@ jobs:
 
             - name: Cache dependencies
               id: npm_cache
-              uses: actions/cache@v2
+              uses: actions/cache@v3
               with:
                   path: '**/node_modules'
                   key: node16-${{ hashFiles('package-lock.json') }}
