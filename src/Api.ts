@@ -1,6 +1,7 @@
 import { FinderError } from './Exception';
 import { logMessage } from './Logger';
 import { httpCall } from './Utils';
+import { version } from '../package.json';
 
 type Options = {
     domain: string;
@@ -197,6 +198,7 @@ export async function requestAssetsById(
         headers: {
             'content-type': 'application/json',
             authorization: `Bearer ${bearerToken}`,
+            'x-frontify-finder-version': `v${version}`,
             'x-frontify-beta': 'enabled',
             'x-frontify-development-flags': 'PUBLIC_API_DYNAMIC_CDN',
         },
