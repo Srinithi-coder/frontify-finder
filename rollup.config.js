@@ -1,6 +1,7 @@
 import dts from 'rollup-plugin-dts';
 import esbuild from 'rollup-plugin-esbuild';
 import nodeResolve from '@rollup/plugin-node-resolve';
+import json from '@rollup/plugin-json';
 import pckg from './package.json';
 
 const name = pckg.main.replace('.umd.js', '');
@@ -17,6 +18,7 @@ export default [
             esbuild({
                 minify: process.env.NODE_ENV === 'production',
             }),
+            json(),
         ],
         output: [
             {
