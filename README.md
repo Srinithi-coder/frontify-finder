@@ -12,14 +12,14 @@ There are three possible ways of installing or requiring the Frontify Finder v2.
 
 Installing the latest published package on a third party app is as simple as running `npm i @frontify/frontify-finder` and requiring the main class either via CommonJs or as an ES module.
 
-```
+```js
 // CommonJs require
 const FrontifyFinder = require('@frontify/frontify-finder');
 ```
 
 **or**
 
-```
+```js
 // ESM import
 import { create, logout } from '@frontify/frontify-finder';
 ```
@@ -28,7 +28,7 @@ import { create, logout } from '@frontify/frontify-finder';
 
 Alternatively, in case you're not relying on npm packages in your web app, you can also require the minified JS script directly by using a CDN such as UPAKG. You can find the latest [Frontify Finder v2](https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js) source code and import it to your project you by requiring it via a `<script>` HTML element.
 
-```
+```html
 <script src="https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js"></script>
 ```
 
@@ -38,13 +38,13 @@ To make use of the available methods in the script all you have to do is use the
 
 Example:
 
-```
+```js
 FrontifyFinder.open(...);
 ```
 
 **or**
 
-```
+```js
 window.FrontifyFinder.open(...);
 ```
 
@@ -52,7 +52,7 @@ window.FrontifyFinder.open(...);
 
 To install any package locally doesn't differ greatly from the CDN use case. You can use the link mentioned above [here](https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js) to download the files contents, save it to your local instance and require via `<script>` HTML element making the `src` address point to your local file.
 
-```
+```html
 <script src="<PATH_TO_FILE>/<FILENAME>.js"></script>
 ```
 
