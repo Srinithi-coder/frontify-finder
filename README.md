@@ -26,7 +26,7 @@ import { create, logout } from '@frontify/frontify-finder';
 
 ## CDN
 
-Alternatively, in case you're not relying on npm packages in your web app, you can also require the minified JS script directly by using a CDN such as UPAKG. You can find the latest [Frontify Finder v2](https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js) source code and import it to your project you by requiring it via a `<script>` HTML element.
+Alternatively, in case you're not relying on npm packages in your web app, you can also require the minified JS script directly by using a CDN such as UNPKG. You can find the latest [Frontify Finder v2](https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js) source code and import it to your project you by requiring it via a `<script>` HTML element.
 
 ```html
 <script src="https://unpkg.com/@frontify/frontify-finder@latest/dist/index.js"></script>
