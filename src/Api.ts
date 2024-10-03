@@ -45,9 +45,6 @@ export type FrontifyAsset = {
     id: string;
     title: string;
     description: string;
-    creator: {
-        name: string;
-    };
     createdAt: string;
     type: string;
     author: string;
@@ -93,9 +90,6 @@ query AssetByIds($ids: [ID!]!, $permanent: Boolean!) {
     title
     description
     type: __typename
-    creator {
-      name
-    }
     createdAt
     expiresAt
     ...withMetadata
